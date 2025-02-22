@@ -13,4 +13,4 @@ docker build -t my-dagster-asset:latest .
 # 創建container並執行
 docker run -p 3000:3000 --name my_dagster_container my-dagster-asset:latest
 
-# 打開localhost:3000，並點擊job就可以開始爬蟲了
+# 打開localhost:3000，並點擊job，勾選哪個要執行，就可以開始爬蟲了
