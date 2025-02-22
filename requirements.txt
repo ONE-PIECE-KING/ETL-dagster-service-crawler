@@ -1,0 +1,8 @@
+dagster==1.10.1
+dagster-webserver==1.10.1
+dagit==1.10.1
+pendulum<3
+
+selenium
+webdriver-manager
+fake-useragent
