@@ -542,7 +542,7 @@ def process_jobs(driver):
                             "", "", "", "", "",
                             "", "", "", "", "", 
                             "", "", "", "", "", 
-                            "", "", "", "", "", # 新增欄位的空值
+                            "", "", "", "", "" # 新增欄位的空值
                         ])
                         com_list.append([""])
                         if sum(1 for field in job_list[-1] if field == "") > 6:
