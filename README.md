@@ -5,12 +5,19 @@
 ## 目錄結構
 
 . ├── definitions.py # Dagster 資產與排程設定
+
   ├── test.py # 爬蟲程式，內含完整爬取邏輯 
+
   ├── Dockerfile # Docker 映像檔建置腳本 
+
   ├── entrypoint.sh # Container 啟動腳本
+  
   ├── requirements.txt # Python 相依套件 
+  
   └── data # 爬蟲產生的 JSON 檔案與資料庫存放位置
+  
       ├── job_list # JSON 檔案存放目錄 
+      
       └── jobs.db # SQLite 資料庫
 
 
