@@ -49,7 +49,7 @@ docker run -p 3000:3000 --name <container name> <image name>
 點擊左側選單中的 Job，選取你要執行的 Job（例如 my_asset_job）。
 勾選並啟動後，系統即會開始執行爬蟲流程並更新資料庫。
 
-##查看資料
+## 查看資料
 爬蟲程式執行完畢後，你可以透過下列方式查看產生的資料：
 
 ### 1. 使用終端機進入 Container
