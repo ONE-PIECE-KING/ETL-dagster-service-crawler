@@ -1,0 +1,6 @@
+services:
+  dagster:
+    build: .
+    container_name: dagster_app
+    ports:
+      - "3000:3000"

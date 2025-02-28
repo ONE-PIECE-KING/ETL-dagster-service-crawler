@@ -6,3 +6,4 @@ pendulum<3
 selenium
 webdriver-manager
 fake-useragent
+supabase

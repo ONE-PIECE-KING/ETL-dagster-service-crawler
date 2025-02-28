@@ -1,46 +1,17 @@
 import os
-import re
 import json
 import sqlite3
 from datetime import datetime
 from dagster import asset, define_asset_job, ScheduleDefinition, AssetSelection, Definitions, AssetMaterialization, Output
 
-# 從 test.py 匯入 run_crawler 函數（保留原有爬蟲邏輯）
-from test import run_crawler
+# 從 test.py 匯入 run_crawler 函式（保留原有爬蟲邏輯）
+from crawl_104 import run_crawler
 
-def get_latest_job_details_file(directory):
-    """
-    從指定目錄中找出最新的 job_details JSON 檔案，
-    檔名格式為 "job_details_YYYYMMDD_HHMMSS_%f.json"
-    """
-    os.makedirs(directory, exist_ok=True)
-    
-    try:
-        files = [
-            f for f in os.listdir(directory)
-            if f.startswith("job_details_") and f.endswith(".json")
-        ]
-    except Exception as e:
-        raise Exception(f"無法讀取目錄 {directory}，錯誤：{e}")
-        
-    if not files:
-        return None
-
-    def extract_timestamp(filename):
-        match = re.search(r'job_details_(\d{8}_\d{6}(?:_\d{1,6})?)\.json', filename)
-        if match:
-            ts_str = match.group(1)
-            try:
-                return datetime.strptime(ts_str, "%Y%m%d_%H%M%S_%f")
-            except ValueError:
-                return datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
-        return datetime.min
-
-    files.sort(key=lambda f: extract_timestamp(f), reverse=True)
-    return os.path.join(directory, files[0])
+# 新增：引入上傳函式
+# import import_to_supabase
 
 @asset
-def crawl_jobs_asset(context):
+def crawl_jobs_asset_01(context):
     """
     先執行爬蟲程式產生 JSON 檔案，並讀取該檔案回傳工作資料。
     此處完整保留 test.py 中的所有欄位資料。
@@ -65,7 +36,32 @@ def crawl_jobs_asset(context):
     yield Output(job_data)
 
 @asset
-def write_jobs_to_db(context, crawl_jobs_asset):
+def crawl_jobs_asset_02(context):
+    """
+    執行第二支爬蟲，爬取新的工作資料，並儲存為 JSON 檔案。
+    """
+    directory = "/opt/dagster/data/job_list_02"  # 與 crawl_job_02 中設定一致
+    context.log.info("開始執行第二支爬蟲程式...")
+    file_path, job_list_crawled = run_crawler(["AI工程師", "演算法工程師"], output_directory=directory)
+    context.log.info(f"第二支爬蟲完成，檔案儲存於 {file_path}")
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            job_data = json.load(f)
+        context.log.info(f"成功讀取 {len(job_data)} 筆工作資料 (第二支)")
+    except Exception as e:
+        context.log.error(f"讀取 {file_path} 時發生錯誤：{e}")
+        job_data = []
+
+    yield AssetMaterialization(
+        asset_key="crawl_jobs_asset_02",
+        description="第二支爬蟲產生 JSON 檔案並讀取工作資料"
+    )
+    yield Output(job_data)
+
+
+@asset
+def write_jobs_to_db_01(context, crawl_jobs_asset_01):
     """
     從 crawl_jobs_asset 接收完整的工作資料，並將其寫入 SQLite 資料庫。
     你可依需求選擇寫入全部欄位或部分欄位，以下示範寫入原始資料中的主要欄位。
@@ -75,7 +71,6 @@ def write_jobs_to_db(context, crawl_jobs_asset):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # 建立資料表，這裡示範寫入全部或部分欄位（你可自行擴充）
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +108,7 @@ def write_jobs_to_db(context, crawl_jobs_asset):
     ''')
     conn.commit()
 
-    job_list = crawl_jobs_asset
+    job_list = crawl_jobs_asset_01
     if job_list:
         for job in job_list:
             cursor.execute('''
@@ -168,19 +163,35 @@ def write_jobs_to_db(context, crawl_jobs_asset):
     yield Output("資料庫更新完成")
 
 # 定義整體資產 job 與排程
-my_asset_job = define_asset_job(
-    name="my_asset_job",
-    selection=AssetSelection.assets(crawl_jobs_asset, write_jobs_to_db),
+job_first_crawler = define_asset_job(
+    name="job_first_crawler",
+    selection=AssetSelection.assets(crawl_jobs_asset_01, write_jobs_to_db_01),
 )
 
-my_asset_schedule = ScheduleDefinition(
+job_second_crawler = define_asset_job(
+    name="job_second_crawler",
+    selection=AssetSelection.assets(crawl_jobs_asset_02),
+)
+
+# 定義job的排成
+# 每 10 分鐘執行一次
+schedule_first_crawler  = ScheduleDefinition(
     name="my_asset_schedule",
-    job=my_asset_job,
-    cron_schedule="*/10 * * * *",  # 每 10 分鐘執行一次
+    job=job_first_crawler,
+    cron_schedule="*/10 * * * *",  
+    execution_timezone="Asia/Taipei",
+)
+
+# 排程第二支爬蟲：每天上午 9 點
+schedule_second_crawler = ScheduleDefinition(
+    name="schedule_second_crawler",
+    job=job_second_crawler,
+    cron_schedule="* 9 * * *",  # 每天 09:00
     execution_timezone="Asia/Taipei",
 )
 
 defs = Definitions(
-    assets=[crawl_jobs_asset, write_jobs_to_db],
-    schedules=[my_asset_schedule],
+    assets=[crawl_jobs_asset_01, write_jobs_to_db_01, crawl_jobs_asset_02],
+    jobs=[job_first_crawler, job_second_crawler],
+    schedules=[schedule_first_crawler, schedule_second_crawler ],
 )

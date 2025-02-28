@@ -29,3 +29,7 @@ echo "=== 資料庫 migration 完成 ==="
 echo "=== 啟動 Dagster ==="
 dagster-webserver -w workspace.yaml --host 0.0.0.0 &
 dagster-daemon run
+
+# 新增這段：上傳 JSON 資料到 Supabase
+#echo "=== 上傳資料到 Supabase ==="
+#python import_to_supabase.py
