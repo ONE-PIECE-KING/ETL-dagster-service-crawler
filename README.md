@@ -20,7 +20,7 @@
 ### 1. 進入專案資料夾
 請進入存放本專案的資料夾：
 
-cd <存放資料的位址>
+    cd <存放資料的位址>
 
 ### 2. 修改設定
 打開 definitions.py，修改下列內容：
@@ -28,17 +28,17 @@ cd <存放資料的位址>
 地址設定：
 如果有設定爬蟲程式的路徑（例如 script_path），請修改為你的實際路徑：
 
-script_path = r"D:\testAsset\test.py"
+    script_path = r"D:\testAsset\test.py"
 
 排程設定：
 修改 cron_schedule 參數，以設定多久執行一次，例如：
 
-cron_schedule="* * * * *",  # 每分鐘執行（可依需求調整）
+    cron_schedule="* * * * *",  # 每分鐘執行（可依需求調整）
 
 ### 3.第一次創建image與container並執行
 
-docker-compose up --build
-docker-compose up  #只要沒有修改第二次以後可以直接這個不用build
+    docker-compose up --build
+    docker-compose up  #只要沒有修改第二次以後可以直接這個不用build
 
 
 ### 4. 使用 Dagster UI 觸發爬蟲
@@ -52,23 +52,23 @@ docker-compose up  #只要沒有修改第二次以後可以直接這個不用bui
 ### 1. 使用終端機進入 Container
 在主機上執行另外一個終端機，輸入下列指令進入 container：
 
-docker exec -it <container name> bash
+    docker exec -it <container name> bash
 
 查看 SQLite 資料
 進入 container 後，執行：
 
-sqlite3 /opt/dagster/data/jobs.db
+    sqlite3 /opt/dagster/data/jobs.db
 
 進入 sqlite3 互動模式後，可執行：
 
-.tables         -- 檢查有哪些資料表
-SELECT * FROM jobs;
+    .tables         -- 檢查有哪些資料表
+    SELECT * FROM jobs;
 
 ### 2. 查看 JSON 檔案
 在 container 中，切換到 JSON 檔案存放目錄：
 
-cd /opt/dagster/data/job_list
-ls
+    cd /opt/dagster/data/job_list
+    ls
 
 你將看到爬蟲產生的各個 JSON 檔案。
 
